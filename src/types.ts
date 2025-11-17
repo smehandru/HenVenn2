@@ -11,6 +11,8 @@ export interface Referral {
   redFlags: string[];
   fullText: string;
   assessment?: ReferralAssessment;
+  isStreaming?: boolean; // True while assessment text is being generated
+  streamingText?: string; // Partial assessment text during streaming
 }
 
 export interface ReferralAssessment {

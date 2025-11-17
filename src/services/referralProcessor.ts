@@ -1,4 +1,4 @@
-import type { Referral } from '../types'
+import type { Referral, ReferralAssessment } from '../types'
 import { extractReferralsFromPDF, parseReferralsFromText } from './pdfParser'
 import { extractTextFromDocx } from './docxParser'
 import { createAIService } from './aiService'
@@ -282,7 +282,7 @@ export async function processReferralTexts(
 export async function processDemoReferralsWithStreaming(
   referralTexts: string[],
   onTriageComplete: (referrals: Referral[]) => void,
-  onAssessmentUpdate: (referralId: string, assessment: ReferralAssessment) => void,
+  onAssessmentUpdate: (referralId: string, assessment: ReferralAssessment, isStreaming?: boolean, streamingText?: string) => void,
   onGroupLoadingChange: (group: 'red' | 'orange' | 'green' | 'rejected', isLoading: boolean) => void
 ): Promise<Referral[]> {
   try {
@@ -342,22 +342,27 @@ export async function processDemoReferralsWithStreaming(
         try {
           let streamedText = ''
 
+          // Start streaming - notify UI
+          onAssessmentUpdate(referral.id, referral.assessment!, true, '')
+
           const assessment = await aiService.assessReferralStreaming(
             referral.fullText,
             referral.referralNumber,
             guidelinesText,
             (chunk) => {
-              // Accumulate streamed text (though we don't show it in real-time)
+              // Accumulate and show streamed text in real-time
               streamedText += chunk
+              onAssessmentUpdate(referral.id, referral.assessment!, true, streamedText)
             }
           )
 
-          // Update the referral with the complete assessment
+          // Update the referral with the complete assessment - streaming done
           referral.assessment = assessment
-          onAssessmentUpdate(referral.id, assessment)
+          onAssessmentUpdate(referral.id, assessment, false)
         } catch (error) {
           console.error(`Error assessing referral ${referral.referralNumber}:`, error)
           // Keep the basic assessment with priority group
+          onAssessmentUpdate(referral.id, referral.assessment!, false)
         }
       }
 

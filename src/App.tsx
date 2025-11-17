@@ -163,11 +163,18 @@ Fastlege mistenker "nerve i klem i nakken" og henviser til ortopedisk vurdering 
           setReferrals(triagedreferrals)
           setUploadedFile(new File(['demo'], 'demo.txt'))
         },
-        // Phase 2: Update individual referral assessments
-        (referralId: string, assessment: ReferralAssessment) => {
+        // Phase 2: Update individual referral assessments with streaming
+        (referralId: string, assessment: ReferralAssessment, isStreaming?: boolean, streamingText?: string) => {
           setReferrals((prevReferrals: Referral[]) =>
             prevReferrals.map((ref: Referral) =>
-              ref.id === referralId ? { ...ref, assessment } : ref
+              ref.id === referralId
+                ? {
+                    ...ref,
+                    assessment,
+                    isStreaming: isStreaming || false,
+                    streamingText: streamingText || ''
+                  }
+                : ref
             )
           )
         },

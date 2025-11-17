@@ -130,17 +130,30 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
 
                         {isReferralExpanded && referral.assessment && (
                           <div className="referral-details">
-                            <div className="detail-section">
-                              <h4>Nøkkeloppsummering</h4>
-                              <p>{referral.assessment.keySummary}</p>
-                            </div>
+                            {referral.isStreaming && referral.streamingText && (
+                              <div className="detail-section streaming-section">
+                                <h4>⏳ Genererer vurdering...</h4>
+                                <div className="streaming-text">
+                                  {referral.streamingText}
+                                </div>
+                              </div>
+                            )}
 
-                            <div className="detail-section">
-                              <h4>Tentativ diagnose</h4>
-                              <p>{referral.assessment.tentativeDiagnosis}</p>
-                            </div>
+                            {!referral.isStreaming && (
+                              <>
+                                <div className="detail-section">
+                                  <h4>Nøkkeloppsummering</h4>
+                                  <p>{referral.assessment.keySummary}</p>
+                                </div>
 
-                            {referral.assessment.differentialDiagnoses && referral.assessment.differentialDiagnoses.length > 0 && (
+                                <div className="detail-section">
+                                  <h4>Tentativ diagnose</h4>
+                                  <p>{referral.assessment.tentativeDiagnosis}</p>
+                                </div>
+                              </>
+                            )}
+
+                            {!referral.isStreaming && referral.assessment.differentialDiagnoses && referral.assessment.differentialDiagnoses.length > 0 && (
                               <div className="detail-section">
                                 <h4>Differensialdiagnoser</h4>
                                 <ul>
@@ -151,7 +164,7 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
                               </div>
                             )}
 
-                            {config.key === 'rejected' && referral.assessment.rejection ? (
+                            {!referral.isStreaming && config.key === 'rejected' && referral.assessment.rejection ? (
                               <>
                                 {referral.assessment.rejection.wrongSpecialty && (
                                   <div className="detail-section wrong-specialty-section">
@@ -194,7 +207,7 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
                                   </button>
                                 </div>
                               </>
-                            ) : referral.assessment.guidelineDescription ? (
+                            ) : !referral.isStreaming && referral.assessment.guidelineDescription ? (
                               <>
                                 <div className="detail-section guideline-section">
                                   <h4>Omtale i prioriteringsveileder</h4>
