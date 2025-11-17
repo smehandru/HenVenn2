@@ -87,6 +87,13 @@
   80%, 100% { content: '...'; }
 }
 
+/* Pending text */
+.group-pending-text {
+  font-size: 14px;
+  color: #e67e22;
+  font-weight: 500;
+}
+
 /* Ready text */
 .group-ready-text {
   font-size: 14px;
