@@ -369,7 +369,7 @@ VIKTIG AVVISNINGSKRITERIER:
 Svar KUN med: red, orange, green, eller rejected`
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o-mini', // Using gpt-4o-mini - available on all tiers
       messages: [
         { role: 'system', content: 'Du er en erfaren ortoped som vurderer medisinske henvisninger på norsk.' },
         { role: 'user', content: prompt }
@@ -458,7 +458,7 @@ Svar KUN med valid JSON, ingen annen tekst.`
     res.setHeader('Connection', 'keep-alive')
 
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4o-mini', // Using gpt-4o-mini - available on all tiers
       messages: [
         { role: 'system', content: 'Du er en erfaren ortoped som vurderer medisinske henvisninger på norsk.' },
         { role: 'user', content: prompt }
