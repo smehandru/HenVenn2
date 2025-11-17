@@ -373,8 +373,7 @@ Brevet skal:
   }
 
   const handleSurveyClick = () => {
-    // TODO: Replace with actual survey URL when available
-    window.open('https://forms.office.com/placeholder', '_blank', 'noopener,noreferrer')
+    window.open('https://forms.office.com/pages/responsepage.aspx?id=cgahCS-CZ0SluluzdZZ8BdqQfgn8leVHn5bZCtygtX1UNFNYODk5REFKMDhRVUJBMVhNWjcwUkxQVCQlQCN0PWcu&route=shorturl', '_blank', 'noopener,noreferrer')
   }
 
   return (
