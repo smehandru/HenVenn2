@@ -97,11 +97,30 @@ export class AIService {
 
   /**
    * Quick triage - only determine priority group without detailed assessment
+   * Uses backend API when available for better security
    */
   async quickTriageReferral(
     referralText: string,
     priorityGuidelines: string
   ): Promise<'red' | 'orange' | 'green' | 'rejected'> {
+    // Try backend API first
+    try {
+      const apiUrl = window.location.origin + '/api/triage/quick'
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralText, priorityGuidelines })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.priorityGroup
+      }
+    } catch (error) {
+      console.log('Backend API not available, falling back to client-side')
+    }
+
+    // Fallback to client-side AI
     const prompt = `Du er en erfaren ortoped som skal gjøre en rask triagering av en henvisning.
 
 PRIORITERINGSVEILEDER:
@@ -150,6 +169,7 @@ Svar KUN med: red, orange, green, eller rejected`
 
   /**
    * Assess a single referral using AI with streaming support
+   * Uses backend API when available for better security
    */
   async assessReferralStreaming(
     referralText: string,
@@ -157,6 +177,50 @@ Svar KUN med: red, orange, green, eller rejected`
     priorityGuidelines: string,
     onChunk?: (chunk: string) => void
   ): Promise<ReferralAssessment> {
+    // Try backend API first with SSE streaming
+    try {
+      const apiUrl = window.location.origin + '/api/triage/assess/stream'
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ referralText, priorityGuidelines })
+      })
+
+      if (response.ok && response.body) {
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let fullResponse = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = JSON.parse(line.slice(6))
+
+              if (data.type === 'delta' && data.text) {
+                fullResponse += data.text
+                if (onChunk) onChunk(data.text)
+              } else if (data.type === 'done') {
+                return this.parseAssessmentResponse(fullResponse)
+              } else if (data.type === 'error') {
+                throw new Error(data.error)
+              }
+            }
+          }
+        }
+
+        return this.parseAssessmentResponse(fullResponse)
+      }
+    } catch (error) {
+      console.log('Backend API not available, falling back to client-side', error)
+    }
+
+    // Fallback to client-side AI
     const prompt = this.buildAssessmentPrompt(referralText, priorityGuidelines)
 
     let fullResponse = ''
@@ -762,6 +826,7 @@ Svar KUN med valid JSON, ingen annen tekst.`
 
 /**
  * Create AI service instance from environment variables
+ * Always returns an AIService - will use backend API when available
  */
 export function createAIService(): AIService | null {
   const copilotSecret = import.meta.env.VITE_COPILOT_DIRECT_LINE_SECRET
@@ -816,8 +881,13 @@ export function createAIService(): AIService | null {
     })
   }
 
-  console.warn('No AI API key found in environment variables')
-  return null
+  // No frontend API keys - create a dummy service that will use backend API
+  // This allows the app to work without exposing API keys in the frontend
+  console.log('No frontend AI API keys - will use backend API')
+  return new AIService({
+    provider: 'openai',
+    apiKey: 'backend-will-handle-this' // Placeholder - backend API will be used
+  })
 }
 
 export default AIService

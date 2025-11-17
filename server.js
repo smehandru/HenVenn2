@@ -334,6 +334,157 @@ app.post('/api/claude/vision', async (req, res) => {
   }
 })
 
+// Quick triage endpoint - fast group assignment
+app.post('/api/triage/quick', async (req, res) => {
+  try {
+    const { referralText, priorityGuidelines } = req.body
+
+    const openai = getOpenAIClient()
+    if (!openai) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' })
+    }
+
+    const prompt = `Du er en erfaren ortoped som skal gjøre en rask triagering av en henvisning.
+
+PRIORITERINGSVEILEDER:
+${priorityGuidelines}
+
+HENVISNING:
+${referralText}
+
+OPPGAVE:
+Bestem KUN hvilken prioritetsgruppe denne henvisningen tilhører. Svar med ett enkelt ord:
+- "red" (≤4 uker): Akutte tilstander, betydelige nevrologiske utfall, røde flagg
+- "orange" (5-12 uker): Betydelige symptomer, moderat funksjonshemming
+- "green" (>12 uker): Elektive tilstander, stabile symptomer
+- "rejected": Mangler grunnleggende informasjon, kan håndteres i primærhelsetjenesten, feil fagfelt
+
+VIKTIG AVVISNINGSKRITERIER:
+- Mangler pasientinfo (alder/kjønn)
+- Vage symptomer ("smerter i kne, prøvd alt")
+- Mangler klinisk undersøkelse
+- Mangler bildediagnostikk
+- Tilhører annet fagfelt (nevrologi, revmatologi, etc.)
+
+Svar KUN med: red, orange, green, eller rejected`
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [
+        { role: 'system', content: 'Du er en erfaren ortoped som vurderer medisinske henvisninger på norsk.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 50
+    })
+
+    const answer = response.choices[0]?.message?.content?.trim().toLowerCase() || ''
+
+    let priorityGroup = 'green' // default
+    if (answer.includes('red')) priorityGroup = 'red'
+    else if (answer.includes('orange')) priorityGroup = 'orange'
+    else if (answer.includes('green')) priorityGroup = 'green'
+    else if (answer.includes('rejected')) priorityGroup = 'rejected'
+
+    res.json({ priorityGroup })
+  } catch (error) {
+    console.error('Quick triage error:', error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+// Streaming assessment endpoint - detailed referral assessment with SSE
+app.post('/api/triage/assess/stream', async (req, res) => {
+  try {
+    const { referralText, priorityGuidelines } = req.body
+
+    const openai = getOpenAIClient()
+    if (!openai) {
+      return res.status(500).json({ error: 'OpenAI API key not configured' })
+    }
+
+    const prompt = `Du er en erfaren ortoped som skal vurdere en henvisning fra fastlege.
+
+PRIORITERINGSVEILEDER:
+${priorityGuidelines}
+
+HENVISNING:
+${referralText}
+
+OPPGAVE:
+Analyser henvisningen og gi en strukturert vurdering på norsk i følgende JSON-format:
+
+For AKSEPTERTE henvisninger (red/orange/green):
+{
+  "keySummary": "Konsis oppsummering av nøkkelsymptomer og funn (2-3 setninger)",
+  "tentativeDiagnosis": "Tentativ diagnose",
+  "differentialDiagnoses": ["Diff.diagnose 1", "Diff.diagnose 2"],  // VALGFRITT - kun hvis relevant
+  "guidelineDescription": {
+    "conditions": [
+      {
+        "icon": "🦵",  // Bruk emoji: 🦵 (bein/skulder/arm), 🦶 (fot/ankel), 🦴 (generelt skjelett), 🏃 (bevegelse/sene)
+        "name": "Rotatorcuff-ruptur (skulder)",
+        "source": "Kap. 2.22 Rotatorcuff skade",
+        "deadlines": [
+          "Traumatisk ruptur: Veiledende frist 12 uker",
+          "Degenerativ ruptur: Veiledende frist 26 uker"
+        ],
+        "rightToHealthcare": true,
+        "comment": "Veilederen skiller eksplisitt mellom traumatiske og degenerative rupturer; traumatiske vurderes som alvorlige og skal håndteres raskere."
+      }
+    ]
+  },
+  "priorityGroup": "red|orange|green"
+}
+
+For AVVISTE henvisninger (rejected):
+{
+  "keySummary": "Konsis oppsummering av henvisningen",
+  "tentativeDiagnosis": "Foreløpig vurdering",
+  "priorityGroup": "rejected",
+  "rejection": {
+    "wrongSpecialty": false,
+    "correctSpecialty": null,
+    "missingInformation": ["Mangler bildediagnostikk", "Ingen beskrivelse av konservativ behandling"],
+    "expectedPrimaryCareActions": ["Prøv fysioterapi i 6-8 uker", "Ta røntgen av aktuelt område"]
+  }
+}
+
+Svar KUN med valid JSON, ingen annen tekst.`
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [
+        { role: 'system', content: 'Du er en erfaren ortoped som vurderer medisinske henvisninger på norsk.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 2000,
+      stream: true
+    })
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || ''
+      if (content) {
+        res.write(`data: ${JSON.stringify({ type: 'delta', text: content })}\n\n`)
+      }
+    }
+
+    res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
+    res.end()
+
+  } catch (error) {
+    console.error('Streaming assessment error:', error)
+    res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`)
+    res.end()
+  }
+})
+
 // Catch-all route - serve index.html for any non-API routes (for client-side routing)
 // In Express 5, we need to use a middleware approach instead of '*'
 app.use((req, res, next) => {

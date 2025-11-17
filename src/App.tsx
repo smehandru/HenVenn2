@@ -147,14 +147,7 @@ Fastlege mistenker "nerve i klem i nakken" og henviser til ortopedisk vurdering 
     ]
 
     try {
-      // Check if AI is configured
-      const aiService = createAIService()
-
-      if (!aiService) {
-        alert('Ingen AI API-nøkkel funnet.\n\nFor å bruke demo-modus, legg til VITE_OPENAI_API_KEY i .env-filen.')
-        return
-      }
-
+      // AI service will use backend API when available
       // Process demo referrals with new two-phase approach
       await processDemoReferralsWithStreaming(
         demoReferralTexts,
