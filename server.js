@@ -30,6 +30,10 @@ const getOpenAIClient = () => {
   return new OpenAI({ apiKey })
 }
 
+const getOpenAIAssistantId = () => {
+  return process.env.VITE_OPENAI_ASSISTANT_ID || null
+}
+
 const getAnthropicClient = () => {
   const apiKey = process.env.VITE_ANTHROPIC_API_KEY
   if (!apiKey) return null
@@ -344,6 +348,75 @@ app.post('/api/triage/quick', async (req, res) => {
       return res.status(500).json({ error: 'OpenAI API key not configured' })
     }
 
+    const assistantId = getOpenAIAssistantId()
+
+    // Use OpenAI Assistant if available (better - has knowledge base)
+    if (assistantId) {
+      try {
+        const thread = await openai.beta.threads.create()
+
+        await openai.beta.threads.messages.create(thread.id, {
+          role: 'user',
+          content: `Du skal gjøre en rask triagering av denne henvisningen.
+
+HENVISNING:
+${referralText}
+
+Bestem KUN hvilken prioritetsgruppe denne henvisningen tilhører. Svar med ETT enkelt ord:
+- "red" (≤4 uker): Akutte tilstander, betydelige nevrologiske utfall, røde flagg
+- "orange" (5-12 uker): Betydelige symptomer, moderat funksjonshemming
+- "green" (>12 uker): Elektive tilstander, stabile symptomer
+- "rejected": Mangler grunnleggende informasjon, kan håndteres i primærhelsetjenesten, feil fagfelt
+
+Svar KUN med: red, orange, green, eller rejected`
+        })
+
+        const run = await openai.beta.threads.runs.create(thread.id, {
+          assistant_id: assistantId
+        })
+
+        // Wait for completion
+        let runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+        let attempts = 0
+        const maxAttempts = 30
+
+        while (runStatus.status !== 'completed' && attempts < maxAttempts) {
+          if (['failed', 'cancelled', 'expired'].includes(runStatus.status)) {
+            throw new Error(`Assistant run failed with status: ${runStatus.status}`)
+          }
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id)
+          attempts++
+        }
+
+        if (runStatus.status !== 'completed') {
+          throw new Error('Timeout waiting for assistant response')
+        }
+
+        const messages = await openai.beta.threads.messages.list(thread.id)
+        const lastMessage = messages.data[0]
+        const textContent = lastMessage.content.find(content => content.type === 'text')
+
+        if (!textContent || textContent.type !== 'text') {
+          throw new Error('No text content in assistant response')
+        }
+
+        const answer = textContent.text.value.trim().toLowerCase()
+
+        let priorityGroup = 'green' // default
+        if (answer.includes('red')) priorityGroup = 'red'
+        else if (answer.includes('orange')) priorityGroup = 'orange'
+        else if (answer.includes('green')) priorityGroup = 'green'
+        else if (answer.includes('rejected')) priorityGroup = 'rejected'
+
+        return res.json({ priorityGroup })
+      } catch (assistantError) {
+        console.log('Assistant API failed, falling back to chat completions:', assistantError.message)
+        // Fall through to chat completions fallback
+      }
+    }
+
+    // Fallback: Use standard chat completions
     const prompt = `Du er en erfaren ortoped som skal gjøre en rask triagering av en henvisning.
 
 PRIORITERINGSVEILEDER:
@@ -369,7 +442,7 @@ VIKTIG AVVISNINGSKRITERIER:
 Svar KUN med: red, orange, green, eller rejected`
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using gpt-4o-mini - available on all tiers
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'Du er en erfaren ortoped som vurderer medisinske henvisninger på norsk.' },
         { role: 'user', content: prompt }
@@ -403,6 +476,103 @@ app.post('/api/triage/assess/stream', async (req, res) => {
       return res.status(500).json({ error: 'OpenAI API key not configured' })
     }
 
+    const assistantId = getOpenAIAssistantId()
+
+    // Set up SSE headers
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+
+    // Use OpenAI Assistant with streaming if available (better - has knowledge base)
+    if (assistantId) {
+      try {
+        const thread = await openai.beta.threads.create()
+        res.write(`data: ${JSON.stringify({ type: 'threadId', threadId: thread.id })}\n\n`)
+
+        await openai.beta.threads.messages.create(thread.id, {
+          role: 'user',
+          content: `Analyser denne henvisningen og gi en strukturert vurdering på norsk i JSON-format.
+
+HENVISNING:
+${referralText}
+
+For AKSEPTERTE henvisninger (red/orange/green):
+{
+  "keySummary": "Konsis oppsummering av nøkkelsymptomer og funn (2-3 setninger)",
+  "tentativeDiagnosis": "Tentativ diagnose",
+  "differentialDiagnoses": ["Diff.diagnose 1", "Diff.diagnose 2"],
+  "guidelineDescription": {
+    "conditions": [{
+      "icon": "🦵",
+      "name": "Tilstandsnavn",
+      "source": "Kapittel fra veileder",
+      "deadlines": ["Frist info"],
+      "rightToHealthcare": true,
+      "comment": "Kommentar"
+    }]
+  },
+  "priorityGroup": "red|orange|green"
+}
+
+For AVVISTE henvisninger (rejected):
+{
+  "keySummary": "Konsis oppsummering",
+  "tentativeDiagnosis": "Foreløpig vurdering",
+  "priorityGroup": "rejected",
+  "rejection": {
+    "wrongSpecialty": false,
+    "correctSpecialty": null,
+    "missingInformation": ["Liste"],
+    "expectedPrimaryCareActions": ["Liste"]
+  }
+}
+
+Svar KUN med valid JSON.`
+        })
+
+        const stream = await openai.beta.threads.runs.stream(thread.id, {
+          assistant_id: assistantId
+        })
+
+        let accumulatedText = ''
+
+        stream.on('textDelta', (textDelta) => {
+          accumulatedText += textDelta.value
+          res.write(`data: ${JSON.stringify({ type: 'delta', text: textDelta.value })}\n\n`)
+        })
+
+        stream.on('textDone', () => {
+          // Clean citations
+          let cleanedText = accumulatedText
+          cleanedText = cleanedText.replace(/【[^】]*†metodebok\.pdf】/g, '(metodebok)')
+          cleanedText = cleanedText.replace(/【[^】]*†prioriteringsveileder[^】]*】/g, '(prioriteringsveileder)')
+          cleanedText = cleanedText.replace(/【[^】]*】/g, '')
+
+          if (cleanedText !== accumulatedText) {
+            res.write(`data: ${JSON.stringify({ type: 'replace', text: cleanedText })}\n\n`)
+          }
+
+          res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
+        })
+
+        stream.on('error', (error) => {
+          console.error('Stream error:', error)
+          res.write(`data: ${JSON.stringify({ type: 'error', error: error.message })}\n\n`)
+          res.end()
+        })
+
+        stream.on('end', () => {
+          res.end()
+        })
+
+        return // Exit after setting up stream
+      } catch (assistantError) {
+        console.log('Assistant API failed, falling back to chat completions:', assistantError.message)
+        // Fall through to chat completions fallback
+      }
+    }
+
+    // Fallback: Use standard chat completions with streaming
     const prompt = `Du er en erfaren ortoped som skal vurdere en henvisning fra fastlege.
 
 PRIORITERINGSVEILEDER:
@@ -452,13 +622,8 @@ For AVVISTE henvisninger (rejected):
 
 Svar KUN med valid JSON, ingen annen tekst.`
 
-    // Set up SSE headers
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.setHeader('Cache-Control', 'no-cache')
-    res.setHeader('Connection', 'keep-alive')
-
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Using gpt-4o-mini - available on all tiers
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'Du er en erfaren ortoped som vurderer medisinske henvisninger på norsk.' },
         { role: 'user', content: prompt }
