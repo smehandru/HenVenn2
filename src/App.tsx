@@ -147,6 +147,10 @@ Fastlege mistenker "nerve i klem i nakken" og henviser til ortopedisk vurdering 
     ]
 
     try {
+      // Show loading overlay during triage
+      setIsProcessing(true)
+      setProcessingProgress('Henvisningene vurderes...')
+
       // AI service will use backend API when available
       // Process demo referrals with new two-phase approach
       await processDemoReferralsWithStreaming(
@@ -155,6 +159,9 @@ Fastlege mistenker "nerve i klem i nakken" og henviser til ortopedisk vurdering 
         (triagedreferrals) => {
           setReferrals(triagedreferrals)
           setUploadedFile(new File(['demo'], 'demo.txt'))
+          // Hide loading overlay after triage is complete
+          setIsProcessing(false)
+          setProcessingProgress('')
         },
         // Phase 2: Update individual referral assessments with streaming
         (referralId: string, assessment: ReferralAssessment, isStreaming?: boolean, streamingText?: string) => {

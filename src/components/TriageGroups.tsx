@@ -94,7 +94,14 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
                 <span className="count-badge">({groupReferrals.length})</span>
               </div>
               <div className="group-header-right">
-                {isLoading && <span className="group-spinner"></span>}
+                {isLoading && (
+                  <span className="group-loading-text">
+                    Vurderer<span className="loading-dots"></span>
+                  </span>
+                )}
+                {!isLoading && groupReferrals.length > 0 && groupReferrals.every(r => r.assessment && !r.isStreaming) && (
+                  <span className="group-ready-text">Klart!</span>
+                )}
                 <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
               </div>
             </div>
@@ -130,12 +137,14 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
 
                         {isReferralExpanded && referral.assessment && (
                           <div className="referral-details">
-                            {referral.isStreaming && referral.streamingText && (
+                            {referral.isStreaming && (
                               <div className="detail-section streaming-section">
-                                <h4>⏳ Genererer vurdering...</h4>
-                                <div className="streaming-text">
-                                  {referral.streamingText}
-                                </div>
+                                <h4>⏳ {referral.streamingText && referral.streamingText.trim().startsWith('{') ? 'Vurderer henvisning...' : 'Genererer vurdering...'}</h4>
+                                {referral.streamingText && !referral.streamingText.trim().startsWith('{') && (
+                                  <div className="streaming-text">
+                                    {referral.streamingText}
+                                  </div>
+                                )}
                               </div>
                             )}
 
