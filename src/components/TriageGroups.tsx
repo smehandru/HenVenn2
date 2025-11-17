@@ -100,7 +100,7 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
                   </span>
                 )}
                 {!isLoading && groupReferrals.length > 0 && groupReferrals.every(r => r.assessment && !r.isStreaming) && (
-                  <span className="group-ready-text">Skal vurderes</span>
+                  <span className="group-ready-text">Klart!</span>
                 )}
                 <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
               </div>
