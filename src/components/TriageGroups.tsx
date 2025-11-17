@@ -99,10 +99,10 @@ const TriageGroups = ({ referrals, onReferralSelect, selectedReferralId, onReque
                     Vurderer<span className="loading-dots"></span>
                   </span>
                 )}
-                {!isLoading && groupReferrals.length > 0 && !groupReferrals.every(r => r.assessment && !r.isStreaming) && (
+                {!isLoading && groupReferrals.length > 0 && !groupReferrals.every(r => r.assessment && !r.isStreaming && r.assessment.keySummary !== 'Vurdering pågår...') && (
                   <span className="group-pending-text">Skal vurderes</span>
                 )}
-                {!isLoading && groupReferrals.length > 0 && groupReferrals.every(r => r.assessment && !r.isStreaming) && (
+                {!isLoading && groupReferrals.length > 0 && groupReferrals.every(r => r.assessment && !r.isStreaming && r.assessment.keySummary !== 'Vurdering pågår...') && (
                   <span className="group-ready-text">Klart!</span>
                 )}
                 <span className="expand-icon">{isExpanded ? '▼' : '▶'}</span>
