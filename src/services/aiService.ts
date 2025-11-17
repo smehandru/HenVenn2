@@ -18,7 +18,7 @@ import { ReferralAssessment } from '../types'
  *    - VITE_COPILOT_DIRECT_LINE_SECRET (Microsoft Copilot Studio)
  */
 
-export type AIProvider = 'claude' | 'openai' | 'openai-assistant' | 'azure' | 'copilot'
+export type AIProvider = 'claude' | 'openai' | 'openai-assistant' | 'azure' | 'copilot' | 'backend'
 
 interface AIServiceConfig {
   provider: AIProvider
@@ -45,6 +45,12 @@ export class AIService {
 
   constructor(config: AIServiceConfig) {
     this.provider = config.provider
+
+    // Backend-only mode - no client initialization needed
+    if (config.provider === 'backend') {
+      this.model = 'gpt-4-turbo-preview' // Placeholder
+      return
+    }
 
     if (config.provider === 'claude') {
       this.anthropic = new Anthropic({
@@ -828,7 +834,7 @@ Svar KUN med valid JSON, ingen annen tekst.`
  * Create AI service instance from environment variables
  * Always returns an AIService - will use backend API when available
  */
-export function createAIService(): AIService | null {
+export function createAIService(): AIService {
   const copilotSecret = import.meta.env.VITE_COPILOT_DIRECT_LINE_SECRET
   const claudeKey = import.meta.env.VITE_ANTHROPIC_API_KEY
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY
@@ -881,12 +887,12 @@ export function createAIService(): AIService | null {
     })
   }
 
-  // No frontend API keys - create a dummy service that will use backend API
-  // This allows the app to work without exposing API keys in the frontend
-  console.log('No frontend AI API keys - will use backend API')
+  // No frontend API keys - create backend-only service
+  // This service will only use backend API endpoints
+  console.log('No frontend AI API keys - using backend-only mode')
   return new AIService({
-    provider: 'openai',
-    apiKey: 'backend-will-handle-this' // Placeholder - backend API will be used
+    provider: 'backend',
+    apiKey: '' // Not used
   })
 }
 

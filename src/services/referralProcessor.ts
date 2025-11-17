@@ -291,10 +291,6 @@ export async function processDemoReferralsWithStreaming(
     }
 
     const aiService = createAIService()
-    if (!aiService) {
-      throw new Error('AI service not available')
-    }
-
     const guidelines = await fetchPriorityGuidelines()
     const guidelinesText = formatGuidelinesForAI(guidelines)
 
