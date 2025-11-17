@@ -1,0 +1,263 @@
+.triage-groups {
+  margin-top: 20px;
+}
+
+.triage-group {
+  margin-bottom: 15px;
+}
+
+.group-header {
+  background-color: #d3d3d3; /* Gray */
+  color: black;
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.group-header:hover {
+  background-color: #c0c0c0;
+}
+
+.group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.color-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.count-badge {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.group-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expand-icon {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.group-spinner {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #003d7a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.group-content {
+  margin-top: 8px;
+  margin-left: 26px;
+}
+
+.empty-message {
+  padding: 12px;
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.referral-item {
+  margin-bottom: 8px;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.referral-item.selected {
+  background-color: #d0e7ff;
+  box-shadow: 0 0 0 2px #003d7a;
+}
+
+.referral-header {
+  background-color: #e8e8e8; /* Lighter gray */
+  color: black;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.referral-item.selected .referral-header {
+  background-color: #b8d9f7;
+}
+
+.referral-header:hover {
+  background-color: #d8d8d8;
+}
+
+.referral-item.selected .referral-header:hover {
+  background-color: #a0caef;
+}
+
+.referral-number {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.referral-details {
+  padding: 14px;
+  background-color: white;
+  border-top: 1px solid #ddd;
+}
+
+.detail-section {
+  margin-bottom: 14px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-section h4 {
+  color: #003d7a;
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.detail-section p {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  margin: 0;
+}
+
+.detail-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.detail-section li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+/* Rejection letter button */
+.rejection-letter-button {
+  background: linear-gradient(135deg, #003d7a 0%, #005aa7 100%);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 61, 122, 0.3);
+  width: 100%;
+}
+
+.rejection-letter-button:hover {
+  background: linear-gradient(135deg, #005aa7 0%, #0073d1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 61, 122, 0.4);
+}
+
+.rejection-letter-button:active {
+  transform: translateY(0);
+}
+
+/* Guideline description section */
+.guideline-section {
+  background: #f8fbff;
+  border-left: 4px solid #003d7a;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+/* Wrong specialty warning section */
+.wrong-specialty-section {
+  background: #fff4e6;
+  border-left: 4px solid #ff9800;
+  padding: 12px;
+  border-radius: 4px;
+}
+
+.wrong-specialty-section h4 {
+  color: #e65100;
+  margin-bottom: 8px;
+}
+
+.wrong-specialty-section p {
+  color: #663c00;
+  line-height: 1.6;
+}
+
+.condition-item {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.condition-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.condition-name {
+  font-size: 15px;
+  color: #003d7a;
+  margin-bottom: 6px;
+}
+
+.condition-source {
+  font-size: 13px;
+  color: #005aa7;
+  margin: 4px 0;
+  font-style: italic;
+}
+
+.condition-deadline {
+  font-size: 14px;
+  color: #333;
+  margin: 3px 0;
+  padding-left: 16px;
+}
+
+.condition-healthcare {
+  font-size: 14px;
+  color: #333;
+  margin: 6px 0;
+  font-weight: 500;
+}
+
+.condition-comment {
+  font-size: 13px;
+  color: #555;
+  margin-top: 8px;
+  line-height: 1.6;
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+}

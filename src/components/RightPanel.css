@@ -1,0 +1,93 @@
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.right-panel .scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 10px;
+}
+
+.right-panel .scrollable-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.right-panel .scrollable-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.right-panel .scrollable-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.right-panel .scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.referral-display {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.referral-display h2 {
+  color: #003d7a;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+.referral-display h3 {
+  color: #003d7a;
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.referral-text p {
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.full-text {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.initial-instruction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.initial-instruction p {
+  color: #003d7a;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.no-selection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+}
+
+.no-selection p {
+  color: #666;
+  font-size: 20px;
+  font-weight: 500;
+}

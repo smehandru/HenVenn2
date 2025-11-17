@@ -1,0 +1,94 @@
+.resource-links {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 2px solid #e1e8ed;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Primary upload button - larger and more prominent */
+.upload-button-primary {
+  flex: 2;
+  min-width: 220px;
+  padding: 11px 24px;
+  border: none;
+  background: linear-gradient(135deg, #003d7a 0%, #005aa7 100%);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 61, 122, 0.3);
+}
+
+.upload-button-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #005aa7 0%, #0073d1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 61, 122, 0.4);
+}
+
+.upload-button-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(0, 61, 122, 0.3);
+}
+
+.upload-button-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Secondary resource buttons - smaller and less prominent */
+.resource-button {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 14px;
+  border: 1.5px solid #003d7a;
+  background: white;
+  color: #003d7a;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 1px 3px rgba(0, 61, 122, 0.08);
+}
+
+.resource-button:hover {
+  background: #f0f7ff;
+  border-color: #005aa7;
+  color: #005aa7;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 61, 122, 0.15);
+}
+
+.resource-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 61, 122, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .resource-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .upload-button-primary {
+    min-width: 100%;
+  }
+
+  .resource-button {
+    min-width: 100%;
+  }
+}
